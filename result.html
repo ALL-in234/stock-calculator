@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票盈虧計算器 - 結果</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 18px;
+            margin: 5px 0;
+        }
+        .result-container {
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        .result-section {
+            background-color: #000;
+            color: #fff;
+            padding: 5px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+        .result-item {
+            padding: 5px;
+            font-size: 14px;
+        }
+        .highlight {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .negative {
+            color: red;
+        }
+        .currency {
+            font-size: 16px;
+        }
+        .button-container {
+            text-align: center;
+            margin-top: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>股票計算</h1>
+    <div class="result-container">
+        <div class="result-section">
+            <div class="result-item">今日盈虧</div>
+            <div class="result-item">
+                HKD <span class="currency">0</span>
+                + <span class="currency">$0</span>
+            </div>
+        </div>
+        <div class="result-section">
+            <div class="result-item">股票買入資訊</div>
+            <div class="result-item">總資產金額: $<span id="total_assets"></span>美元</div>
+            <div class="result-item">股票代碼: <span id="stock_code"></span></div>
+            <div class="result-item">買入價格: $<span id="buy_price"></span></div>
+            <div class="result-item">買入數量: <span id="quantity"></span> 股</div>
+            <div class="result-item">買入占比: <span id="purchase_ratio"></span>%</div>
+            <div class="result-item">總成本: $<span id="total_cost"></span></div>
+            <div class="result-item">剩餘總資產: $<span id="remaining_assets"></span></div>
+        </div>
+        <div class="result-section">
+            <div class="result-item">當前持倉</div>
+            <div class="result-item">股票代碼: <span id="stock_code_hold"></span></div>
+            <div class="result-item">買入價格: $<span id="buy_price_hold"></span></div>
+            <div class="result-item">買入數量: <span id="quantity_hold"></span> 股</div>
+            <div class="result-item">總成本: $<span id="total_cost_hold"></span></div>
+            <div class="result-item">剩餘總資產: $<span id="remaining_assets_hold"></span></div>
+        </div>
+        <div class="result-section">
+            <div class="result-item">盈虧計算</div>
+            <div class="result-item">止盈價格: $<span id="predict_price"></span></div>
+            <div class="result-item">盈利金額（止盈）: $<span id="profits_amount" class="highlight"></span>, 盈利總占比: <span id="profits_percentage" class="highlight"></span>%</div>
+            <div class="result-item">止損價格: $<span id="stop_loss_price"></span></div>
+            <div class="result-item">虧損金額: $<span id="loss_amount" class="negative"></span> (若觸及止損價格)</div>
+            <div class="result-item">補倉價格: $<span id="add_position_price"></span></div>
+            <div class="result-item">虧損金額: $<span id="loss_amount2" class="negative"></span> (若觸及補倉價格), 虧損總占比: <span id="loss_percentage2" class="negative"></span>%</div>
+            <div class="result-item">補倉金額: $<span id="add_position_amount"></span></div>
+            <div class="result-item">補倉數量: <span id="add_position_quantity"></span> 股</div>
+        </div>
+        <div class="result-section">
+            <div class="result-item">止損價格: $<span id="stop_loss_price_final"></span></div>
+            <div class="result-item">虧損金額: $<span id="current_holdings"></span> (若觸及止損價格)</div>
+            <div class="result-item">當前總資產: $<span id="current_assets"></span> (若觸及止損價格), 當前總占比: <span id="current_percentage"></span>%</div>
+        </div>
+    </div>
+    <div class="button-container">
+        <button onclick="goBack()">返回輸入頁面</button>
+    </div>
+
+    <script>
+        // 從 localStorage 獲取數據
+        const data = JSON.parse(localStorage.getItem('stockData')) || {};
+
+        // 填充數據
+        document.getElementById('total_assets').textContent = data.total_assets.toFixed(2);
+        document.getElementById('stock_code').textContent = data.stock_code;
+        document.getElementById('buy_price').textContent = data.buy_price.toFixed(2);
+        document.getElementById('quantity').textContent = data.quantity;
+        document.getElementById('purchase_ratio').textContent = data.purchase_ratio;
+        document.getElementById('total_cost').textContent = data.total_cost;
+        document.getElementById('remaining_assets').textContent = data.remaining_assets;
+
+        document.getElementById('stock_code_hold').textContent = data.stock_code;
+        document.getElementById('buy_price_hold').textContent = data.buy_price.toFixed(2);
+        document.getElementById('quantity_hold').textContent = data.quantity;
+        document.getElementById('total_cost_hold').textContent = data.total_cost;
+        document.getElementById('remaining_assets_hold').textContent = data.remaining_assets;
+
+        document.getElementById('predict_price').textContent = data.predict_price.toFixed(2);
+        document.getElementById('profits_amount').textContent = data.profits_amount;
+        document.getElementById('profits_percentage').textContent = data.profits_percentage;
+        document.getElementById('stop_loss_price').textContent = data.stop_loss_price.toFixed(2);
+        document.getElementById('loss_amount').textContent = data.loss_amount;
+        document.getElementById('add_position_price').textContent = data.add_position_price.toFixed(2);
+        document.getElementById('loss_amount2').textContent = data.loss_amount2;
+        document.getElementById('loss_percentage2').textContent = data.loss_percentage2;
+        document.getElementById('add_position_amount').textContent = data.add_position_amount;
+        document.getElementById('add_position_quantity').textContent = data.add_position_quantity;
+
+        // 模擬圖片中的止損價格和當前持倉計算
+        const stop_loss_value = parseFloat(data.stop_loss_price) * data.quantity;
+        const current_assets_value = parseFloat(data.total_assets) - parseFloat(data.loss_amount);
+        document.getElementById('stop_loss_price_final').textContent = data.stop_loss_price.toFixed(2);
+        document.getElementById('current_holdings').textContent = stop_loss_value.toFixed(2);
+        document.getElementById('current_assets').textContent = current_assets_value.toFixed(2);
+        document.getElementById('current_percentage').textContent = ((current_assets_value / data.total_assets) * 100).toFixed(2);
+
+        function goBack() {
+            localStorage.removeItem('stockData'); // 清空數據
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
