@@ -103,7 +103,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 驗證所有輸入
     function validateAllInputs() {
-        let allValid = true;
+        let Marisa
+let allValid = true;
         const inputs = [
             { id: 'total_assets', errorId: 'total_assets_error' }
         ];
@@ -221,9 +222,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const totalCost = (buyPrice * quantity).toFixed(2);
                 totalCostSum += parseFloat(totalCost);
-                if (totalCostSum > totalAssets) throw new Error(`股票 ${i} 加入後，總買入成本超過總資產金額！`);
+                if (totalCostSum > totalAssets) throw new Error(`股票 ${i} 初始買入總成本超過總資產金額！`);
 
-                // 計算剩餘總資產，考慮所有股票的總成本
                 const remainingAssets = (totalAssets - totalCostSum).toFixed(2);
                 if (parseFloat(addPositionAmount) > parseFloat(remainingAssets)) {
                     throw new Error(`股票 ${i} 補倉金額超過剩餘總資產！`);
@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const profitsAmount = ((predictPrice - buyPrice) * quantity).toFixed(2);
                 const profitsPercentage = (profitsAmount / totalAssets * 100).toFixed(2);
                 const lossAmount = ((buyPrice - stopLossPrice) * quantity).toFixed(2);
-                const lossPercentage = (lossAmount / totalAssets * 100).toFixed(2); // 添加虧損占比
+                const lossPercentage = (lossAmount / totalAssets * 100).toFixed(2);
                 const lossAmount2 = ((buyPrice - addPositionPrice) * quantity).toFixed(2);
                 const lossPercentage2 = (lossAmount2 / totalAssets * 100).toFixed(2);
                 const purchaseRatio = (totalCost / totalAssets * 100).toFixed(2);
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     profitsAmount,
                     profitsPercentage,
                     lossAmount,
-                    lossPercentage, // 包含虧損占比
+                    lossPercentage,
                     lossAmount2,
                     lossPercentage2,
                     purchaseRatio,
