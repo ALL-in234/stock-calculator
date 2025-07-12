@@ -1,4 +1,29 @@
-<script>
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票盈虧計算器 - 結果</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .highlight { color: #22c55e; font-weight: bold; }
+        .negative { color: #ef4444; }
+        .result-section { background-color: #000; color: #fff; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
+        .result-item { padding: 5px; font-size: 14px; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="max-w-lg w-full p-6 bg-white shadow-lg rounded-lg">
+        <h1 class="text-2xl font-bold text-center text-gray-800 mb-4">股票計算</h1>
+        <div id="result-container"></div>
+        <div class="text-center mt-4">
+            <button onclick="goBack()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">返回輸入頁面</button>
+            <button onclick="exportToCSV()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 ml-2">匯出為 CSV</button>
+        </div>
+    </div>
+
+    <script>
+     <script>
     const stockData = JSON.parse(localStorage.getItem('stockData')) || [];
 
     function renderResults() {
@@ -58,3 +83,5 @@
 
     renderResults();
 </script>
+</body>
+</html>
