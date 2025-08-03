@@ -31,27 +31,30 @@
 
             stockData.forEach((stock, index) => {
                 const totalLoss = (parseFloat(stock.buyPrice) - parseFloat(stock.stopLossPrice)) * stock.quantity;
-                const currentAssets = parseFloat(stock.totalAssets) - parseFloat(stock.lossAmount);
+                const currentAssets = stock.totalAssets ? (parseFloat(stock.totalAssets) - parseFloat(stock.lossAmount)).toFixed(2) : null;
 
-                const stockHtml = `
+                let stockHtml = `
                     <div class="result-section">
                         <div class="result-item font-bold">股票 ${index + 1} - ${stock.stockCode}</div>
-                        <div class="result-item">總資產金額: $${stock.totalAssets.toFixed(2)}</div>
+                        ${stock.totalAssets ? `<div class="result-item">總資產金額: $${stock.totalAssets.toFixed(2)}</div>` : ''}
                         <div class="result-item">股票代碼: ${stock.stockCode}</div>
                         <div class="result-item">買入價格: $${stock.buyPrice.toFixed(2)}</div>
                         <div class="result-item">買入數量: ${stock.quantity} 股</div>
-                        <div class="result-item">買入占比: ${stock.purchaseRatio}%</div>
+                        ${stock.purchaseRatio ? `<div class="result-item">買入占比: ${stock.purchaseRatio}%</div>` : ''}
                         <div class="result-item">總成本: $${stock.totalCost}</div>
-                        <div class="result-item">剩餘總資產: $${stock.remainingAssets}</div>
+                        ${stock.remainingAssets ? `<div class="result-item">剩餘總資產: $${stock.remainingAssets}</div>` : ''}
                         <div class="result-item">止盈價格: $${stock.predictPrice.toFixed(2)}</div>
-                        <div class="result-item">盈利金額（止盈）: $<span class="highlight">${stock.profitsAmount}</span>, 盈利總占比: <span class="highlight">${stock.profitsPercentage}%</span></div>
+                        <div class="result-item">盈利金額（止盈）: $<span class="highlight">${stock.profitsAmount}</span>
+                            ${stock.profitsPercentage ? `, 盈利總占比: <span class="highlight">${stock.profitsPercentage}%</span>` : ''}</div>
                         <div class="result-item">止損價格: $${stock.stopLossPrice.toFixed(2)}</div>
-                        <div class="result-item">虧損金額: $<span class="negative">${stock.lossAmount}</span> (若觸及止損價格), 虧損總占比: <span class="negative">${stock.lossPercentage}%</span></div>
+                        <div class="result-item">虧損金額: $<span class="negative">${stock.lossAmount}</span> (若觸及止損價格)
+                            ${stock.lossPercentage ? `, 虧損總占比: <span class="negative">${stock.lossPercentage}%</span>` : ''}</div>
                         <div class="result-item">補倉價格: $${stock.addPositionPrice.toFixed(2)}</div>
-                        <div class="result-item">虧損金額: $<span class="negative">${stock.lossAmount2}</span> (若觸及補倉價格), 虧損總占比: <span class="negative">${stock.lossPercentage2}%</span></div>
+                        <div class="result-item">虧損金額: $<span class="negative">${stock.lossAmount2}</span> (若觸及補倉價格)
+                            ${stock.lossPercentage2 ? `, 虧損總占比: <span class="negative">${stock.lossPercentage2}%</span>` : ''}</div>
                         <div class="result-item">補倉金額: $${stock.addPositionAmount}</div>
                         <div class="result-item">補倉數量: ${stock.addPositionQuantity} 股</div>
-                        <div class="result-item">當前總資產: $${currentAssets.toFixed(2)} (若觸及止損價格), 當前總占比: ${((currentAssets / stock.totalAssets) * 100).toFixed(2)}%</div>
+                        ${currentAssets ? `<div class="result-item">當前總資產: $${currentAssets} (若觸及止損價格), 當前總占比: ${((currentAssets / stock.totalAssets) * 100).toFixed(2)}%</div>` : ''}
                         <div class="result-item">
                             <button onclick="window.open('https://www.tradingview.com/symbols/${stock.stockCode}', '_blank')" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">查看 ${stock.stockCode} 在 TradingView</button>
                         </div>
@@ -67,9 +70,9 @@
         }
 
         function exportToCSV() {
-            let csvContent = '股票代碼,買入價格,買入數量,止盈價格,止損價格,補倉價格,補倉金額,補倉數量\n';
+            let csvContent = '總資產金額,股票代碼,買入價格,買入數量,買入占比,總成本,剩餘總資產,止盈價格,盈利金額,盈利總占比,止損價格,虧損金額,虧損總占比,補倉價格,補倉虧損金額,補倉虧損總占比,補倉金額,補倉數量\n';
             stockData.forEach(stock => {
-                csvContent += `${stock.stockCode},${stock.buyPrice},${stock.quantity},${stock.predictPrice},${stock.stopLossPrice},${stock.addPositionPrice},${stock.addPositionAmount},${stock.addPositionQuantity}\n`;
+                csvContent += `${stock.totalAssets || ''},${stock.stockCode},${stock.buyPrice},${stock.quantity},${stock.buyPercentage || ''},${stock.totalCost},${stock.remainingAssets || ''},${stock.predictPrice},${stock.profitsAmount},${stock.profitsPercentage || ''},${stock.stopLossPrice},${stock.lossAmount},${stock.lossPercentage || ''},${stock.addPositionPrice},${stock.lossAmount2},${stock.lossPercentage2 || ''},${stock.addPositionAmount},${stock.addPositionQuantity}\n`;
             });
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
