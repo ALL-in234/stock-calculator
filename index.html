@@ -15,8 +15,8 @@
         <h1 class="text-2xl font-bold text-center text-gray-800 mb-4">股票盈虧計算器</h1>
         <div id="loading" class="hidden text-center text-gray-500 mb-4">載入中...</div>
         <div class="mb-4">
-            <label for="total_assets" class="block font-bold text-gray-700">總資產金額 ($):</label>
-            <input type="number" id="total_assets" step="0.01" min="0" required class="w-full p-2 border rounded">
+            <label for="total_assets" class="block font-bold text-gray-700">總資產金額 ($，選填):</label>
+            <input type="number" id="total_assets" step="0.01" min="0" class="w-full p-2 border rounded">
             <div class="error-message" id="total_assets_error"></div>
         </div>
         <div id="stock-inputs" class="space-y-4">
@@ -127,15 +127,23 @@
             `;
             document.getElementById('stock-inputs').appendChild(stockEntry);
             bindInputValidation();
+            updateAddPositionMethodOptions();
         });
 
         function validateInput(input, errorId) {
             const errorElement = document.getElementById(errorId);
             errorElement.style.display = 'none';
-            if (input.value === '') return false;
+            if (input.id === 'total_assets' && input.value === '') return true; // 允許總資產為空
+            if (input.value === '' && input.required) return false;
 
             if (input.id.includes('quantity_input')) {
+                const totalAssets = document.getElementById('total_assets').value;
                 if (input.value.endsWith('%')) {
+                    if (!totalAssets) {
+                        errorElement.textContent = '使用百分比時必須輸入總資產金額！';
+                        errorElement.style.display = 'block';
+                        return false;
+                    }
                     const percent = input.value.replace(/[^0-9.]/g, '');
                     if (!/^\d+(\.\d+)?$/.test(percent) || parseFloat(percent) > 100 || parseFloat(percent) <= 0) {
                         errorElement.textContent = '請輸入有效的百分比 (0-100)！';
@@ -167,9 +175,10 @@
 
         function validateAllInputs() {
             let allValid = true;
-            const inputs = [
-                { id: 'total_assets', errorId: 'total_assets_error' }
-            ];
+            const inputs = [];
+            if (document.getElementById('total_assets').value !== '') {
+                inputs.push({ id: 'total_assets', errorId: 'total_assets_error' });
+            }
             for (let i = 1; i <= stockCount; i++) {
                 inputs.push(
                     { id: `stock_code_${i}`, errorId: `stock_code_${i}_error` },
@@ -190,11 +199,32 @@
             return allValid;
         }
 
+        function updateAddPositionMethodOptions() {
+            const totalAssets = document.getElementById('total_assets').value;
+            document.querySelectorAll('select[id^="add_position_method_"]').forEach(select => {
+                const index = select.id.split('_').pop();
+                const percentOption = select.querySelector('option[value="2"]');
+                percentOption.disabled = !totalAssets;
+                if (!totalAssets && select.value === '2') {
+                    select.value = '1';
+                    const label = document.getElementById(`add_position_label_${index}`);
+                    const addInput = document.getElementById(`add_position_input_${index}`);
+                    label.textContent = '補倉金額 ($):';
+                    addInput.setAttribute('step', '0.01');
+                    addInput.value = '';
+                    validateInput(addInput, `add_position_input_${index}_error`);
+                }
+            });
+        }
+
         function bindInputValidation() {
             document.querySelectorAll('input, select').forEach(input => {
                 input.addEventListener('input', () => {
                     validateInput(input, `${input.id}_error`);
                     validateAllInputs();
+                    if (input.id === 'total_assets') {
+                        updateAddPositionMethodOptions();
+                    }
                 });
                 if (input.id.includes('add_position_method')) {
                     input.addEventListener('change', () => {
@@ -226,8 +256,10 @@
             }
 
             try {
-                const totalAssets = parseFloat(document.getElementById('total_assets').value);
+                const totalAssetsInput = document.getElementById('total_assets').value;
+                const totalAssets = totalAssetsInput ? parseFloat(totalAssetsInput) : null;
                 const stockData = [];
+                let totalCostSum = 0;
 
                 for (let i = 1; i <= stockCount; i++) {
                     const stockCode = document.getElementById(`stock_code_${i}`).value.trim().toUpperCase();
@@ -244,42 +276,45 @@
 
                     let quantity, buyPercentage;
                     if (quantityInput.endsWith('%')) {
+                        if (!totalAssets) throw new Error(`股票 ${i} 使用百分比時必須輸入總資產金額！`);
                         buyPercentage = parseFloat(quantityInput.replace(/%/, ''));
                         const buyAmount = totalAssets * (buyPercentage / 100);
                         quantity = Math.floor(buyAmount / buyPrice);
                         if (quantity <= 0) throw new Error(`股票 ${i} 根據輸入的百分比計算出的買入數量必須大於 0！`);
                     } else {
                         quantity = parseInt(quantityInput);
-                        buyPercentage = (quantity * buyPrice / totalAssets) * 100;
+                        buyPercentage = totalAssets ? (quantity * buyPrice / totalAssets * 100).toFixed(2) : null;
                     }
 
                     const totalCost = (buyPrice * quantity).toFixed(2);
-                    if (parseFloat(totalCost) > totalAssets) throw new Error(`股票 ${i} 初始買入總成本超過總資產金額！`);
+                    totalCostSum += parseFloat(totalCost);
+                    if (totalAssets && totalCostSum > totalAssets) {
+                        throw new Error(`股票 ${i} 初始買入總成本超過總資產金額！`);
+                    }
 
-                    const remainingAssets = (totalAssets - totalCost).toFixed(2);
+                    const remainingAssets = totalAssets ? (totalAssets - totalCostSum).toFixed(2) : null;
 
                     let addPositionAmount, addPositionPercentage;
                     if (addPositionMethod === '1') {
                         addPositionAmount = addPositionInput.toFixed(2);
-                        if (parseFloat(addPositionAmount) > parseFloat(remainingAssets)) {
-                            throw new Error(`股票 ${i} 補倉金額超過剩餘總資產！`);
-                        }
-                        addPositionPercentage = (addPositionAmount / totalAssets * 100).toFixed(2);
+                        addPositionPercentage = totalAssets ? (addPositionAmount / totalAssets * 100).toFixed(2) : null;
                     } else {
+                        if (!totalAssets) throw new Error(`股票 ${i} 使用總資產百分比時必須輸入總資產金額！`);
                         addPositionPercentage = addPositionInput;
                         addPositionAmount = (totalAssets * (addPositionPercentage / 100)).toFixed(2);
-                        if (parseFloat(addPositionAmount) > parseFloat(remainingAssets)) {
-                            throw new Error(`股票 ${i} 補倉金額超過剩餘總資產！`);
-                        }
+                    }
+
+                    if (totalAssets && parseFloat(addPositionAmount) > parseFloat(remainingAssets)) {
+                        throw new Error(`股票 ${i} 補倉金額超過剩餘總資產！`);
                     }
 
                     const profitsAmount = ((predictPrice - buyPrice) * quantity).toFixed(2);
-                    const profitsPercentage = (profitsAmount / totalAssets * 100).toFixed(2);
+                    const profitsPercentage = totalAssets ? (profitsAmount / totalAssets * 100).toFixed(2) : null;
                     const lossAmount = ((buyPrice - stopLossPrice) * quantity).toFixed(2);
-                    const lossPercentage = (lossAmount / totalAssets * 100).toFixed(2);
+                    const lossPercentage = totalAssets ? (lossAmount / totalAssets * 100).toFixed(2) : null;
                     const lossAmount2 = ((buyPrice - addPositionPrice) * quantity).toFixed(2);
-                    const lossPercentage2 = (lossAmount2 / totalAssets * 100).toFixed(2);
-                    const purchaseRatio = (totalCost / totalAssets * 100).toFixed(2);
+                    const lossPercentage2 = totalAssets ? (lossAmount2 / totalAssets * 100).toFixed(2) : null;
+                    const purchaseRatio = totalAssets ? (totalCost / totalAssets * 100).toFixed(2) : null;
                     const addPositionQuantity = Math.floor(addPositionAmount / addPositionPrice);
                     if (addPositionQuantity <= 0) throw new Error(`股票 ${i} 補倉金額不足以購買至少 1 股！`);
 
@@ -317,6 +352,7 @@
         }
 
         bindInputValidation();
+        updateAddPositionMethodOptions();
     </script>
 </body>
 </html>
