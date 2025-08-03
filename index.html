@@ -38,6 +38,9 @@
                     <div class="error-message" id="quantity_input_1_error"></div>
                 </div>
                 <div class="mb-2">
+                    <button type="button" id="fill_stock_1" class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">一鍵填入</button>
+                </div>
+                <div class="mb-2">
                     <label for="predict_price_1" class="block font-bold text-gray-700">止盈價格 ($):</label>
                     <input type="number" id="predict_price_1" step="0.01" min="0" required class="w-full p-2 border rounded">
                     <div class="error-message" id="predict_price_1_error"></div>
@@ -100,6 +103,9 @@
                         <div class="error-message" id="quantity_input_${stockCount}_error"></div>
                     </div>
                     <div class="mb-2">
+                        <button type="button" id="fill_stock_${stockCount}" class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">一鍵填入</button>
+                    </div>
+                    <div class="mb-2">
                         <label for="predict_price_${stockCount}" class="block font-bold text-gray-700">止盈價格 ($):</label>
                         <input type="number" id="predict_price_${stockCount}" step="0.01" min="0" required class="w-full p-2 border rounded">
                         <div class="error-message" id="predict_price_${stockCount}_error"></div>
@@ -129,6 +135,7 @@
                 `;
                 document.getElementById('stock-inputs').appendChild(stockEntry);
                 bindInputValidation(stockEntry);
+                bindFillButton(stockCount); // 綁定新股票的「一鍵填入」按鈕
                 updateAddPositionMethodOptions();
             });
 
@@ -222,6 +229,88 @@
                         validateInput(addInput, `add_position_input_${index}_error`);
                     }
                 });
+            }
+
+            // 綁定「一鍵填入」按鈕
+            function bindFillButton(index) {
+                const fillButton = document.getElementById(`fill_stock_${index}`);
+                if (fillButton) {
+                    fillButton.addEventListener('click', () => {
+                        const buyPriceInput = document.getElementById(`buy_price_${index}`);
+                        const quantityInput = document.getElementById(`quantity_input_${index}`);
+                        const predictPriceInput = document.getElementById(`predict_price_${index}`);
+                        const stopLossPriceInput = document.getElementById(`stop_loss_price_${index}`);
+                        const addPositionPriceInput = document.getElementById(`add_position_price_${index}`);
+                        const addPositionMethodSelect = document.getElementById(`add_position_method_${index}`);
+                        const addPositionInput = document.getElementById(`add_position_input_${index}`);
+                        const addPositionLabel = document.getElementById(`add_position_label_${index}`);
+                        const errorElement = document.getElementById(`buy_price_${index}_error`);
+
+                        // 驗證買入價格和買入數量
+                        if (!buyPriceInput.value || !quantityInput.value) {
+                            errorElement.textContent = '請先輸入買入價格和買入數量！';
+                            errorElement.style.display = 'block';
+                            return;
+                        }
+
+                        const buyPrice = parseFloat(buyPriceInput.value);
+                        if (isNaN(buyPrice) || buyPrice <= 0) {
+                            errorElement.textContent = '買入價格必須大於 0！';
+                            errorElement.style.display = 'block';
+                            return;
+                        }
+
+                        // 驗證買入數量
+                        if (!validateInput(quantityInput, `quantity_input_${index}_error`)) {
+                            return;
+                        }
+
+                        let quantity;
+                        const totalAssets = document.getElementById('total_assets').value;
+                        if (quantityInput.value.endsWith('%')) {
+                            if (!totalAssets) {
+                                document.getElementById(`quantity_input_${index}_error`).textContent = '使用百分比時必須輸入總資產金額！';
+                                document.getElementById(`quantity_input_${index}_error`).style.display = 'block';
+                                return;
+                            }
+                            const buyPercentage = parseFloat(quantityInput.value.replace(/%/, ''));
+                            const buyAmount = totalAssets * (buyPercentage / 100);
+                            quantity = Math.floor(buyAmount / buyPrice);
+                            if (quantity <= 0) {
+                                document.getElementById(`quantity_input_${index}_error`).textContent = '根據輸入的百分比計算出的買入數量必須大於 0！';
+                                document.getElementById(`quantity_input_${index}_error`).style.display = 'block';
+                                return;
+                            }
+                        } else {
+                            quantity = parseInt(quantityInput.value);
+                        }
+
+                        // 計算總成本
+                        const totalCost = buyPrice * quantity;
+
+                        // 計算止盈價格 (+10%)、止損價格 (-3%)、補倉價格 (80%)、補倉金額 (總成本的20%)
+                        const predictPrice = (buyPrice * 1.10).toFixed(2);
+                        const stopLossPrice = (buyPrice * 0.97).toFixed(2);
+                        const addPositionPrice = (buyPrice * 0.80).toFixed(2);
+                        const addPositionAmount = (totalCost * 0.20).toFixed(2);
+
+                        // 填充欄位
+                        predictPriceInput.value = predictPrice;
+                        stopLossPriceInput.value = stopLossPrice;
+                        addPositionPriceInput.value = addPositionPrice;
+                        addPositionMethodSelect.value = '1'; // 設置為具體金額
+                        addPositionLabel.textContent = '補倉金額 ($):';
+                        addPositionInput.value = addPositionAmount;
+                        addPositionInput.setAttribute('step', '0.01');
+
+                        // 觸發驗證
+                        validateInput(predictPriceInput, `predict_price_${index}_error`);
+                        validateInput(stopLossPriceInput, `stop_loss_price_${index}_error`);
+                        validateInput(addPositionPriceInput, `add_position_price_${index}_error`);
+                        validateInput(addPositionInput, `add_position_input_${index}_error`);
+                        validateAllInputs();
+                    });
+                }
             }
 
             // 綁定輸入驗證和補倉方式切換
@@ -386,6 +475,7 @@
 
             document.getElementById('calculate_btn').addEventListener('click', calculate);
             bindInputValidation();
+            bindFillButton(1); // 綁定第一個股票的「一鍵填入」按鈕
             updateAddPositionMethodOptions();
         });
     </script>
