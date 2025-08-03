@@ -15,7 +15,7 @@
         <h1 class="text-2xl font-bold text-center text-gray-800 mb-4">股票盈虧計算器</h1>
         <div id="loading" class="hidden text-center text-gray-500 mb-4">載入中...</div>
         <div class="mb-4">
-            <label for="total_assets" class="block font-bold text-gray-700">總資產金額 (選填):</label>
+            <label for="total_assets" class="block font-bold text-gray-700">總資產金額 (選填)</label>
             <input type="number" id="total_assets" step="0.01" min="0" class="w-full p-2 border rounded">
             <div class="error-message" id="total_assets_error"></div>
         </div>
@@ -23,17 +23,17 @@
             <div class="stock-entry border p-4 rounded">
                 <h3 class="font-bold text-gray-700">股票 1</h3>
                 <div class="mb-2">
-                    <label for="stock_code_1" class="block font-bold text-gray-700">股票代碼 (例如: AAPL):</label>
+                    <label for="stock_code_1" class="block font-bold text-gray-700">股票代碼 (例如: AAPL)</label>
                     <input type="text" id="stock_code_1" required class="w-full p-2 border rounded">
                     <div class="error-message" id="stock_code_1_error"></div>
                 </div>
                 <div class="mb-2">
-                    <label for="buy_price_1" class="block font-bold text-gray-700">買入價格 ($):</label>
+                    <label for="buy_price_1" class="block font-bold text-gray-700">買入價格 ($)</label>
                     <input type="number" id="buy_price_1" step="0.01" min="0" required class="w-full p-2 border rounded">
                     <div class="error-message" id="buy_price_1_error"></div>
                 </div>
                 <div class="mb-2">
-                    <label for="quantity_input_1" class="block font-bold text-gray-700">買入數量 (股數或百分比):</label>
+                    <label for="quantity_input_1" class="block font-bold text-gray-700">買入數量 (股數或百分比)</label>
                     <input type="text" id="quantity_input_1" required class="w-full p-2 border rounded">
                     <div class="error-message" id="quantity_input_1_error"></div>
                 </div>
@@ -41,29 +41,29 @@
                     <button type="button" id="fill_stock_1" class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">一鍵填入</button>
                 </div>
                 <div class="mb-2">
-                    <label for="predict_price_1" class="block font-bold text-gray-700">止盈價格 ($):</label>
+                    <label for="predict_price_1" class="block font-bold text-gray-700">止盈價格 ($)</label>
                     <input type="number" id="predict_price_1" step="0.01" min="0" required class="w-full p-2 border rounded">
                     <div class="error-message" id="predict_price_1_error"></div>
                 </div>
                 <div class="mb-2">
-                    <label for="stop_loss_price_1" class="block font-bold text-gray-700">止損價格 ($):</label>
+                    <label for="stop_loss_price_1" class="block font-bold text-gray-700">止損價格 ($)</label>
                     <input type="number" id="stop_loss_price_1" step="0.01" min="0" required class="w-full p-2 border rounded">
                     <div class="error-message" id="stop_loss_price_1_error"></div>
                 </div>
                 <div class="mb-2">
-                    <label for="add_position_price_1" class="block font-bold text-gray-700">補倉價格 ($):</label>
+                    <label for="add_position_price_1" class="block font-bold text-gray-700">補倉價格 ($)</label>
                     <input type="number" id="add_position_price_1" step="0.01" min="0" required class="w-full p-2 border rounded">
                     <div class="error-message" id="add_position_price_1_error"></div>
                 </div>
                 <div class="mb-2">
-                    <label for="add_position_method_1" class="block font-bold text-gray-700">補倉金額輸入方式:</label>
+                    <label for="add_position_method_1" class="block font-bold text-gray-700">補倉金額輸入方式</label>
                     <select id="add_position_method_1" required class="w-full p-2 border rounded">
                         <option value="1">具體金額</option>
                         <option value="2">總資產百分比</option>
                     </select>
                 </div>
                 <div class="mb-2">
-                    <label id="add_position_label_1" class="block font-bold text-gray-700">補倉金額 ($):</label>
+                    <label id="add_position_label_1" class="block font-bold text-gray-700">補倉金額 ($)</label>
                     <input type="number" id="add_position_input_1" step="0.01" min="0" required class="w-full p-2 border rounded">
                     <div class="error-message" id="add_position_input_1_error"></div>
                 </div>
