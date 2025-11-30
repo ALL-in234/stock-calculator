@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>財富目標計算器</title>
+  <title>資產成長預測器</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
@@ -15,11 +15,11 @@
       min-height: 100vh;
     }
     .container {
-      max-width: 900px;
+      max-width: 800px;
       margin: 40px auto;
       background: white;
       border-radius: 20px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
       overflow: hidden;
     }
     header {
@@ -28,34 +28,15 @@
       padding: 30px;
       text-align: center;
     }
-    h1 { margin: 0; font-size: 2.2em; }
-    .tabs {
-      display: flex;
-      background: #f1f1f1;
-    }
-    .tab {
-      flex: 1;
-      padding: 15px;
-      text-align: center;
-      cursor: pointer;
-      font-weight: bold;
-      transition: 0.3s;
-    }
-    .tab.active {
-      background: #4a00e0;
-      color: white;
-    }
+    h1 { margin: 0; font-size: 2.3em; }
     .content {
       padding: 40px;
     }
     .form-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 25px;
       margin-bottom: 30px;
-    }
-    @media (max-width: 768px) {
-      .form-grid { grid-template-columns: 1fr; }
     }
     label {
       display: block;
@@ -63,39 +44,41 @@
       font-weight: bold;
       color: #555;
     }
-    input, select {
+    input {
       width: 100%;
-      padding: 12px;
+      padding: 14px;
       border: 2px solid #ddd;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 1.1em;
+      box-sizing: border-box;
     }
     button {
       background: #8e2de2;
       color: white;
       border: none;
-      padding: 15px 30px;
-      font-size: 1.2em;
+      padding: 16px 40px;
+      font-size: 1.3em;
       border-radius: 50px;
       cursor: pointer;
-      margin-top: 20px;
+      display: block;
+      margin: 20px auto;
     }
     button:hover { background: #791fd1; }
     .result {
       margin-top: 30px;
-      padding: 25px;
+      padding: 30px;
       background: #f8f9ff;
       border-radius: 15px;
-      font-size: 1.5em;
       text-align: center;
       display: none;
+      font-size: 1.4em;
     }
     .result.show { display: block; }
     .big-number {
-      font-size: 2.5em;
+      font-size: 3.2em;
       color: #4a00e0;
       font-weight: bold;
-      margin: 10px 0;
+      margin: 15px 0;
     }
     canvas {
       margin-top: 40px;
@@ -106,52 +89,31 @@
 <body>
   <div class="container">
     <header>
-      <h1>財富自由目標計算器</h1>
-      <p>計算要達到目標需要存多少，或多久能達到</p>
+      <h1>資產成長預測器</h1>
+      <p>輸入目前資產 + 預期報酬率 + 目標日期<br>馬上知道未來會變多少錢</p>
     </header>
-
-    <div class="tabs">
-      <div class="tab active" data-mode="monthly">我要算每月需要存多少</div>
-      <div class="tab" data-mode="years">我每月存固定金額，要多久達到</div>
-    </div>
 
     <div class="content">
       <div class="form-grid">
         <div>
           <label>目前資產金額（元）</label>
-          <input type="number" id="current" value="100000" min="0">
+          <input type="number" id="current" value="500000" min="0" placeholder="例如 500000">
         </div>
         <div>
-          <label>目標金額（元）</label>
-          <input type="number" id="target" value="10000000" min="1">
+          <label>預期年化報酬率（%）</label>
+          <input type="number" id="rate" value="8" min="0" max="100" step="0.1" placeholder="例如 8">
         </div>
         <div>
           <label>目標日期</label>
           <input type="date" id="date">
         </div>
-        <div>
-          <label>預期年化報酬率（%）</label>
-          <select id="rate">
-            <option value="5">5%（保守型）</option>
-            <option value="7" selected>7%（平衡型）</option>
-            <option value="10">10%（積極型）</option>
-            <option value="12">12%（台美股長期平均）</option>
-            <option value="15">15%（高成長）</option>
-          </select>
-        </div>
-        <div id="monthlyAmountField" style="display:none;">
-          <label>每月固定投入金額（元）<span style="color:#999;font-weight:normal">（模式二使用）</span></label>
-          <input type="number" id="monthlyAmount" value="30000" min="0">
-        </div>
       </div>
 
-      <div style="text-align:center;">
-        <button onclick="calculate()">立刻計算</button>
-      </div>
+      <button onclick="calculate()">開始預測未來財富</button>
 
       <div id="result" class="result">
-        <div id="resultText"></div>
-        <div class="big-number" id="bigNumber"></div>
+        <div>到目標日期，你的資產預計會成長到</div>
+        <div class="big-number" id="finalAmount">0</div>
         <div id="extraInfo"></div>
       </div>
 
@@ -160,43 +122,21 @@
   </div>
 
   <script>
-    // 預設目標日期為 15 年後
+    // 預設目標日期為 20 年後
     window.onload = () => {
       const dateInput = document.getElementById('date');
       const today = new Date();
-      const future = new Date(today.getFullYear() + 15, today.getMonth(), today.getDate());
+      const future = new Date(today.getFullYear() + 20, today.getMonth(), today.getDate());
       dateInput.value = future.toISOString().split('T')[0];
-      switchMode('monthly');
     };
-
-    // 切換模式
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        switchMode(tab.dataset.mode);
-      });
-    });
-
-    function switchMode(mode) {
-      const field = document.getElementById('monthlyAmountField');
-      if (mode === 'years') {
-        field.style.display = 'block';
-      } else {
-        field.style.display = 'none';
-      }
-    }
 
     function calculate() {
       const current = parseFloat(document.getElementById('current').value) || 0;
-      const target = parseFloat(document.getElementById('target').value) || 0;
+      const annualRate = parseFloat(document.getElementById('rate').value);
       const dateStr = document.getElementById('date').value;
-      const annualRate = parseFloat(document.getElementById('rate').value) / 100;
-      const monthlyRate = annualRate / 12;
-      const mode = document.querySelector('.tab.active').dataset.mode;
 
-      if (!dateStr || target <= current) {
-        alert('請檢查輸入資料');
+      if (!current || !annualRate || !dateStr) {
+        alert('請填寫完整資訊');
         return;
       }
 
@@ -204,90 +144,57 @@
       const today = new Date();
       today.setHours(0,0,0,0);
       targetDate.setHours(0,0,0,0);
-      
-      const months = Math.max(1, Math.round((targetDate - today) / (1000 * 60 * 60 * 24 * 30.44)));
 
-      let resultText = '';
-      let bigNumber = '';
-      let extraInfo = '';
-
-      if (mode === 'monthly') {
-        // 模式一：計算每月需要存多少
-        if (months === 0) {
-          bigNumber = '0';
-          resultText = '目標日期已過';
-        } else {
-          // 未來價值公式：FV = PV*(1+r)^n + PMT*((1+r)^n - 1)/r
-          const fvCurrent = current * Math.pow(1 + monthlyRate, months);
-          const remaining = target - fvCurrent;
-          if (remaining <= 0) {
-            bigNumber = '0';
-            resultText = '現有資產已經足夠！';
-            extraInfo = `複利成長後預計達到 ${fvCurrent.toLocaleString('zh-TW', {maximumFractionDigits: 0})} 元`;
-          } else {
-            const monthlySave = remaining * monthlyRate / (Math.pow(1 + monthlyRate, months) - 1);
-            bigNumber = Math.ceil(monthlySave).toLocaleString('zh-TW');
-            resultText = '每個月需要存';
-            extraInfo = `總共 ${months} 個月（約 ${(months/12).toFixed(1)} 年）<br>目前資產複利成長會變成 ${fvCurrent.toLocaleString('zh-TW', {maximumFractionDigits: 0})} 元`;
-          }
-        }
-      } else {
-        // 模式二：每月存固定金額，需要多少年
-        const monthlySave = parseFloat(document.getElementById('monthlyAmount').value) || 0;
-        if (monthlySave <= 0) {
-          alert('請輸入每月投入金額');
-          return;
-        }
-
-        // 反推需要幾個月
-        let total = current;
-        let m = 0;
-        while (total < target && m < 1200) { // 最多100年
-          m++;
-          total = total * (1 + monthlyRate) + monthlySave;
-        }
-        if (m >= 1200) {
-          resultText = '即使存100年也達不到目標';
-          bigNumber = '不可能';
-        } else {
-          const years = (m / 12).toFixed(1);
-          bigNumber = years + ' 年';
-          resultText = '大約需要';
-          const targetDate2 = new Date(today);
-          targetDate2.setMonth(today.getMonth() + m);
-          extraInfo = `預計達成日期：${targetDate2.getFullYear()}年${targetDate2.getMonth()+1}月<br>每月存 ${monthlySave.toLocaleString()} 元，年化 ${annualRate*100}%`;
-        }
+      if (targetDate <= today) {
+        alert('目標日期必須在未來');
+        return;
       }
 
-      document.getElementById('resultText').innerHTML = resultText;
-      document.getElementById('bigNumber').textContent = bigNumber;
-      document.getElementById('extraInfo').innerHTML = extraInfo;
+      // 計算總月數（精確到天再換算成月）
+      const days = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+      const months = days / 30.44;  // 平均每月天數
+
+      const monthlyRate = annualRate / 100 / 12;
+      const finalAmount = current * Math.pow(1 + monthlyRate, months);
+
+      // 顯示結果
+      document.getElementById('finalAmount').textContent = 
+        Math.round(finalAmount).toLocaleString('zh-TW') + ' 元';
+
+      const years = (months / 12).toFixed(1);
+      document.getElementById('extraInfo').innerHTML = 
+        `經過約 <strong>${years}</strong> 年（${Math.round(days)} 天）<br>` +
+        `年化報酬率 <strong>${annualRate}%</strong> 的複利成長`;
+
       document.getElementById('result').classList.add('show');
 
-      drawChart(current, target, months, annualRate, mode === 'monthly' ? 
-        (target - current * Math.pow(1 + monthlyRate, months)) * monthlyRate / (Math.pow(1 + monthlyRate, months) - 1) : 
-        parseFloat(document.getElementById('monthlyAmount').value || 0));
+      // 繪製成長曲線
+      drawChart(current, finalAmount, months, annualRate);
     }
 
-    function drawChart(current, target, totalMonths, annualRate, monthlySave = 0) {
-      const monthlyRate = annualRate / 12;
+    function drawChart(startAmount, endAmount, totalMonths, annualRate) {
+      const monthlyRate = annualRate / 100 / 12;
       const labels = [];
       const data = [];
-      let balance = current;
+      let balance = startAmount;
 
-      for (let i = 0; i <= totalMonths && i < 600; i++) {
-        if (i > 0) {
-          balance = balance * (1 + monthlyRate) + monthlySave;
+      // 每年取一個點，最多顯示 600 個月（50年）
+      const step = totalMonths > 120 ? Math.ceil(totalMonths / 100) : 12; // 點數控制
+
+      for (let m = 0; m <= totalMonths; m++) {
+        if (m > 0) {
+          balance = balance * (1 + monthlyRate);
         }
-        if (i % 12 === 0 || i === totalMonths) {
-          labels.push(`第 ${i/12} 年`);
+        if (m % step === 0 || m === totalMonths) {
+          const year = (m / 12).toFixed(1);
+          labels.push(year === '0.0' ? '現在' : `第 ${year} 年`);
           data.push(Math.round(balance));
         }
       }
 
       const ctx = document.getElementById('growthChart').getContext('2d');
       if (window.myChart) window.myChart.destroy();
-      
+
       window.myChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -299,24 +206,26 @@
             backgroundColor: 'rgba(74, 0, 224, 0.1)',
             fill: true,
             tension: 0.4,
-            pointRadius: 4
-          }, {
-            label: '目標金額',
-            data: labels.map(() => target),
-            borderColor: '#ff0066',
-            borderDash: [5, 5],
-            pointRadius: 0
+            pointRadius: 5,
+            pointBackgroundColor: '#4a00e0'
           }]
         },
         options: {
           responsive: true,
           plugins: {
-            title: { display: true, text: '資產成長預測曲線', font: {size: 18} }
+            title: {
+              display: true,
+              text: '複利成長預測曲線',
+              font: { size: 20 }
+            },
+            legend: { display: false }
           },
           scales: {
             y: {
-              beginAtZero: true,
-              ticks: { callback: value => 'NT$' + value.toLocaleString() }
+              beginAtZero: false,
+              ticks: {
+                callback: value => 'NT$' + value.toLocaleString()
+              }
             }
           }
         }
