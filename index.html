@@ -3,304 +3,161 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>資產複利增長預測計算器 - 港幣版 Pro</title>
+<title>資產複利增長預測計算器 - 港幣 Pro 版</title>
 <style>
   :root {
-    --bg-light: #f0f8ff;
-    --card-light: rgba(255,255,255,0.95);
-    --text-light: #00333a;
-    --input-light: #e6f4f4;
+    --bg: #f0faff;
+    --card: rgba(255,255,255,0.96);
+    --text: #00333a;
+    --input: #e8f5f5;
     --accent: #ff6d00;
   }
-  body {
-    font-family: "Microsoft JhengHei", "PingFang HK", sans-serif;
-    background: linear-gradient(135deg, #a7e1f5, var(--bg-light));
-    color: var(--text-light);
-    min-height: 100vh;
-    padding: 20px;
-    transition: background 0.6s, color 0.6s;
-  }
   body.dark {
-    --bg-light: #0d1b2a;
-    background: linear-gradient(135deg, #1b263b, #0d1b2a);
-    color: #e0f7fa;
+    --bg: #0b1829;
+    --card: rgba(15,25,45,0.96);
+    --text: #d0e8ff;
+    --input: #1e2f47;
+    --accent: #ff8a3d;
   }
-  .container {
-    max-width: 960px;
-    margin: 0 auto;
-    background: var(--card-light);
-    border-radius: 28px;
-    padding: 40px;
-    box-shadow: 0 30px 90px rgba(0,0,0,0.18);
-    backdrop-filter: blur(15px);
-    transition: all 0.6s;
+  body { 
+    font-family: "Microsoft JhengHei","PingFang HK",sans-serif; 
+    background: linear-gradient(135deg,#a7e1f5,var(--bg)); 
+    color: var(--text); 
+    margin:0; min-height:100vh; padding:20px; transition:0.6s;
   }
-  body.dark .container { background: rgba(20,30,50,0.95); }
-
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 30px;
+  .container { 
+    max-width:960px; margin:0 auto; background:var(--card); border-radius:28px; 
+    padding:40px; box-shadow:0 30px 90px rgba(0,0,0,0.2); backdrop-filter:blur(15px);
   }
-  h1 { font-size: 2.5em; font-weight: 900; color: var(--accent); }
-
-  .controls {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-  select, .toggle-btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 50px;
-    background: var(--input-light);
-    color: var(--text-light);
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.3s;
-  }
-  body.dark select, body.dark .toggle-btn { background: #1e2d47; }
-
-  .input-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 24px;
-    margin: 30px 0;
-  }
-  label {
-    display: block;
-    margin-bottom: 10px;
-    font-weight: bold;
-    font-size: 1.1em;
-  }
-  input, select {
-    width: 100%;
-    height: 58px;
-    padding: 0 20px;
-    font-size: 18px;
-    border: none;
-    border-radius: 16px;
-    background: var(--input-light);
-    transition: all 0.3s;
-  }
-  input:focus, select:focus { outline: none; box-shadow: 0 0 0 4px rgba(255,109,0,0.3); }
-
-  button.calculate {
-    display: block;
-    margin: 40px auto;
-    padding: 18px 60px;
-    font-size: 22px;
-    font-weight: bold;
-    color: white;
-    background: linear-gradient(45deg, #ff6d00, #ff9100);
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-    box-shadow: 0 12px 35px rgba(255,109,0,0.4);
-    transition: all 0.3s;
-  }
-  button.calculate:hover { transform: translateY(-5px); box-shadow: 0 20px 50px rgba(255,109,0,0.5); }
-
-  #result {
-    text-align: center;
-    font-size: 36px;
-    font-weight: 900;
-    margin: 40px 0;
-    color: #d84315;
-    text-shadow: 0 3px 15px rgba(0,0,0,0.15);
-  }
-  canvas { border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.15); margin-top: 20px; }
+  h1 { font-size:2.5em; font-weight:900; color:var(--accent); text-align:center; margin-bottom:30px; }
+  .header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px; margin-bottom:20px; }
+  .controls select, .controls button { padding:10px 20px; border:none; border-radius:50px; background:var(--input); color:var(--text); font-size:16px; cursor:pointer; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:24px; margin:30px 0; }
+  label { font-weight:bold; margin-bottom:8px; display:block; }
+  input, select { width:100%; height:58px; padding:0 20px; font-size:18px; border:none; border-radius:16px; background:var(--input); }
+  input:focus, select:focus { outline:none; box-shadow:0 0 0 5px rgba(255,109,0,0.3); }
+  .calc-btn { display:block; margin:40px auto; padding:18px 60px; font-size:22px; font-weight:bold; 
+    background:linear-gradient(45deg,var(--accent),#ffb74d); color:white; border:none; border-radius:50px; 
+    cursor:pointer; box-shadow:0 12px 40px rgba(255,109,0,0.4); transition:0.3s; }
+  .calc-btn:hover { transform:translateY(-5px); box-shadow:0 20px 50px rgba(255,109,0,0.5); }
+  #result { text-align:center; font-size:36px; font-weight:900; margin:40px 0; line-height:1.4; }
+  canvas { border-radius:20px; box-shadow:0 15px 40px rgba(0,0,0,0.15); }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-gradient"></script>
 </head>
-
 <body>
+
 <div class="container">
-  <header>
+  <div class="header">
     <h1>資產複利增長預測計算器</h1>
     <div class="controls">
-      <select id="currency">
-        <option value="HKD">HK$ 港幣</option>
-        <option value="USD">USD 美金</option>
-      </select>
-      <select id="timeUnit">
-        <option value="year">年</option>
-        <option value="month">月</option>
-        <option value="week">週</option>
-      </select>
-      <button class="toggle-btn" onclick="toggleDark()">暗黑模式</button>
-    </div>
-  </header>
-
-  <div class="input-grid">
-    <div class="form-item">
-      <label>當前資產</label>
-      <input type="number" id="initial" value="500000" min="0">
-    </div>
-    <div class="form-item">
-      <label>預期年回報率 (%)</label>
-      <input type="number" id="rate" value="8" step="0.1" min="-50" max="100">
-    </div>
-    <div class="form-item">
-      <label>預測時間數量</label>
-      <input type="number" id="timeValue" value="20" min="1" max="1000">
-    </div>
-    <div class="form-item">
-      <label>每期定投金額</label>
-      <input type="number" id="periodicAdd" value="10000" min="0">
+      <select id="currency"><option value="HKD">HK$ 港幣</option><option value="USD">USD 美金</option></select>
+      <select id="timeUnit"><option value="year">年</option><option value="month">月</option><option value="week">週</option></select>
+      <button onclick="document.body.classList.toggle('dark');calculate()">暗黑模式</button>
     </div>
   </div>
 
-  <button class="calculate" onclick="calculate()">立即預測未來財富</button>
+  <div class="grid">
+    <div><label>當前資產</label><input type="number" id="initial" value="500000"></div>
+    <div><label>預期年回報率 (%)</label><input type="number" id="rate" value="8" step="0.1"></div>
+    <div><label>預測時間數量</label><input type="number" id="timeValue" value="20" min="1"></div>
+    <div><label>每期定投金額</label><input type="number" id="periodicAdd" value="10000"></div>
+  </div>
 
+  <button class="calc-btn" onclick="calculate()">立即預測未來財富</button>
   <div id="result">請填寫資料後點擊計算</div>
   <canvas id="chart"></canvas>
 </div>
 
 <script>
-let myChart = null;
-let isDark = false;
+let chart = null;
 
-// 切換暗黑模式
-function toggleDark() {
-  isDark = !isDark;
-  document.body.classList.toggle('dark', isDark);
-  calculate(); // 重新繪圖保持配色一致
-}
+const currencyInfo = { HKD: {sym:'HK$', rate:1}, USD: {sym:'US$', rate:7.8} };
 
-// 貨幣符號與匯率（僅顯示用，計算仍用原始數字）
-const currencyInfo = {
-  HKD: { symbol: 'HK$', rate: 1 },
-  USD: { symbol: 'US$', rate: 7.8 }  // 1 USD ≈ 7.8 HKD
-};
+function getCurrency() { return document.getElementById('currency').value; }
+function symbol() { return currencyInfo[getCurrency()].sym; }
+function toDisplay(n) { return getCurrency()==='USD' ? Math.round(n/currencyInfo.USD.rate) : Math.round(n); }
+function fmt(n) { return symbol() + toDisplay(n).toLocaleString('en-HK'); }
 
-function getSymbol() {
-  const cur = document.getElementById('currency').value;
-  return currencyInfo[cur].symbol;
-}
-function convertToDisplay(amount) {
-  const cur = document.getElementById('currency').value;
-  if (cur === 'USD') return Math.round(amount / currencyInfo.USD.rate);
-  return Math.round(amount);
-}
-function formatMoney(num) {
-  return getSymbol() + convertToDisplay(num).toLocaleString('en-HK');
+function getUnitText() {
+  const u = document.getElementById('timeUnit').value;
+  return u==='year'?'年' : u==='month'?'個月' : '週';
 }
 
 function calculate() {
-  const initial = parseFloat(document.getElementById('initial').value) || 0;
-  const annualRate = parseFloat(document.getElementById('rate').value) / 100 || 0;
-  const timeValue = parseInt(document.getElementById('timeValue').value) || 1;
-  const periodicAdd = parseFloat(document.getElementById('periodicAdd').value) || 0;
+  const initial = +document.getElementById('initial').value || 0;
+  const annualRate = (+document.getElementById('rate').value || 0) / 100;
+  const timeValue = +document.getElementById('timeValue').value || 1;
+  const periodicAdd = +document.getElementById('periodicAdd').value || 0;
   const unit = document.getElementById('timeUnit').value;
 
-  // 計算每期實際天數與利率
-  let periods, periodRate;
-  if (unit === 'year') {
-    periods = timeValue * 12;
-    periodRate = annualRate / 12;
-  } else if (unit === 'month') {
-    periods = timeValue;
-    periodRate = annualRate / 12;
-  } else { // week
-    periods = timeValue;
-    periodRate = annualRate / 52;
-  }
+  let periods, periodRate, xStep;
+  if (unit === 'year')   { periods = timeValue * 12; periodRate = annualRate/12; xStep = 12; }
+  else if (unit === 'month') { periods = timeValue;     periodRate = annualRate/12; xStep = 12; }
+  else { /* week */         periods = timeValue;     periodRate = annualRate/52; xStep = 52; }
 
   let balance = initial;
-  const data = [{ x: 0, y: Math.round(initial) }];
+  const data = [{x:0, y:initial}];
 
   for (let i = 1; i <= periods; i++) {
     balance = balance * (1 + periodRate) + periodicAdd;
-    // 每年或每10年顯示一次點（視時間長短自動調整）
-    if (unit === 'year' && i % 12 === 0) data.push({ x: i/12, y: Math.round(balance) });
-    else if (unit === 'month' && i % 12 === 0) data.push({ x: i/12, y: Math.round(balance) });
-    else if (unit === 'week' && i % 52 === 0) data.push({ x: i/52, y: Math.round(balance) });
-  }
-  // 最後一筆一定要加
-  if (data[data.length-1].x !== timeValue && unit === 'year') {
-    data.push({ x: timeValue, y: Math.round(balance) });
+    if (i % xStep === 0 || i === periods) {
+      const x = unit==='year' ? i/12 : unit==='month' ? i/12 : i/52;
+      data.push({x: Math.round(x*10)/10, y: Math.round(balance)});
+    }
   }
 
   const final = Math.round(balance);
 
   // 結果動畫
   document.getElementById('result').innerHTML = 
-    `預測 ${timeValue} ${unit === 'year' ? '年' : unit === 'month' ? '個月' : '週'} 後，資產預計達到：<br>
-     <span id="animatedNumber" style="font-size:1.2em;color:#ff3d00;">${formatMoney(initial)}</span>`;
-
-  setTimeout(() => {
-    let start = initial;
-    const obj = document.getElementById('animatedNumber');
-    const step = (now) => {
-      if (!startTime) startTime = now;
-      const progress = Math.min((now - startTime) / 2200, 1);
-      const current = Math.floor(progress * (final - start) + start);
-      obj.innerText = formatMoney(current);
-      if (progress < 1) requestAnimationFrame(step);
-    };
-    let startTime = null;
-    requestAnimationFrame(step);
-  }, 300);
+    `${timeValue} ${getUnitText()} 後預計資產：<br><span id="num" style="color:#ff3d00;font-size:1.2em;">${fmt(initial)}</span>`;
+  
+  let startTime = null;
+  const anim = (t) => {
+    if (!startTime) startTime = t;
+    const prog = Math.min((t-startTime)/2200, 1);
+    const val = Math.floor(prog * (final - initial) + initial);
+    document.getElementById('num').textContent = fmt(val);
+    if (prog < 1) requestAnimationFrame(anim);
+  };
+  requestAnimationFrame(anim);
 
   // 圖表
-  if (myChart) myChart.destroy();
+  if (chart) chart.destroy();
   const ctx = document.getElementById('chart').getContext('2d');
-  const gradient = ctx.createLinearGradient(0,0,0,500);
-  gradient.addColorStop(0, 'rgba(255,109,0,0.6)');
-  gradient.addColorStop(0.5, 'rgba(255,193,7,0.3)');
-  gradient.addColorStop(1, 'rgba(255,255,255,0.05)');
+  const grad = ctx.createLinearGradient(0,0,0,500);
+  grad.addColorStop(0,'rgba(255,109,0,0.6)');
+  grad.addColorStop(0.5,'rgba(255,193,7,0.3)');
+  grad.addColorStop(1,'rgba(255,255,255,0.05)');
 
-  myChart = new Chart(ctx, {
+  chart = new Chart(ctx, {
     type: 'line',
-    data: { datasets: [{
-      label: '資產成長',
-      data: data,
-      borderColor: '#ff6d00',
-      backgroundColor: gradient,
-      borderWidth: 5,
-      pointRadius: 7,
-      pointHoverRadius: 12,
-      pointBackgroundColor: '#ff6d00',
-      pointBorderColor: '#fff',
-      pointBorderWidth: 3,
-      fill: true,
-      tension: 0.4
-    }]},
+    data: { datasets: [{ data, borderColor:'#ff6d00', backgroundColor:grad, borderWidth:5,
+      pointRadius:7, pointHoverRadius:12, pointBackgroundColor:'#ff6d00',
+      pointBorderColor:'#fff', pointBorderWidth:3, fill:true, tension:0.4 }]},
     options: {
-      responsive: true,
-      animation: { duration: 2500 },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: 'rgba(0,0,0,0.85)',
-          cornerRadius: 12,
-          bodyFont: { size: 20, weight: 'bold' },
-          callbacks: {
-            title: ctx => `第 ${ctx[0].parsed.x} ${unit === 'year' ? '年' : unit === 'month' ? '個月' : '週'}`,
-            label: ctx => '資產：' + formatMoney(ctx.parsed.y)
-          }
+      responsive:true,
+      plugins: { legend:{display:false}, tooltip:{
+        backgroundColor:'rgba(0,0,0,0,0.85)', cornerRadius:12,
+        bodyFont:{size:20,weight:'bold'},
+        callbacks:{
+          title: t => `第 ${t[0].parsed.x} ${getUnitText()}`,
+          label: t => '資產：' + fmt(t.parsed.y)
         }
-      },
-      scales: {
-        x: { title: { display: true, text: `時間 (${unit === 'year' ? '年' : unit === 'month' ? '月' : '週'})` }},
-        y: { title: { display: true, text: '資產金額' }, ticks: { callback: v => formatMoney(v) }}
+      }},
+      scales:{
+        x:{title:{display:true,text:`時間 (${getUnitText()})`}},
+        y:{title:{display:true,text:'資產金額'}, ticks:{callback:fmt}}
       }
     }
   });
 }
 
-// 初始載入
-window.onload = () => {
-  calculate();
-  // 任何輸入變動都自動重新計算
-  document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', calculate));
-};
+// 自動即時更新
+document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', calculate));
+window.onload = calculate;
 </script>
 </body>
 </html>
