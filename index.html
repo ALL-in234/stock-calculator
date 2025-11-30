@@ -2,31 +2,37 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>資產複利增長預測計算器</title>
 <style>
+  * { box-sizing: border-box; margin:0; padding:0; }
   body {
-    font-family: "Microsoft JhengHei", "Arial", sans-serif;
-    background: #E0F7FA;
-    margin: 0;
+    font-family: "Microsoft JhengHei", "PingFang TC", "Helvetica Neue", sans-serif;
+    background: linear-gradient(135deg, #B2EBF2 0%, #E0F7FA 100%);
+    min-height: 100vh;
     padding: 20px;
   }
   .container {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
-    background: #80DEEA;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.18);
+    backdrop-filter: blur(12px);
   }
   h1 {
     text-align: center;
     color: #006064;
-    margin-bottom: 30px;
+    font-size: 2.4em;
+    font-weight: 900;
+    margin-bottom: 40px;
+    letter-spacing: 1px;
   }
   .input-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 24px;
     margin-bottom: 30px;
   }
   .form-item {
@@ -35,50 +41,72 @@
   }
   label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     font-weight: bold;
     color: #004D40;
+    font-size: 1.1em;
   }
   input {
     width: 100%;
-    padding: 12px;
-    border: 2px solid #00ACC1;
-    border-radius: 6px;
-    font-size: 16px;
+    height: 58px;
+    padding: 0 20px;
+    font-size: 18px;
+    border: none;
+    border-radius: 14px;
+    background: #E0F2F1;
+    transition: all 0.3s;
+  }
+  input:focus {
+    outline: none;
+    background: #B2DFDB;
+    box-shadow: 0 0 0 5px rgba(0, 188, 212, 0.25);
   }
   button {
-    background: #FF5722;
-    color: white;
-    border: none;
-    padding: 14px 30px;
-    font-size: 18px;
-    border-radius: 6px;
-    cursor: pointer;
     display: block;
-    margin: 20px auto;
+    margin: 30px auto;
+    padding: 16px 50px;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    background: linear-gradient(45deg, #FF6D00, #FF9100);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(255, 109, 0, 0.4);
+    transition: all 0.3s;
   }
-  button:hover { background: #E64A19; }
+  button:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 40px rgba(255, 109, 0, 0.5);
+  }
   #result {
     text-align: center;
-    font-size: 24px;
-    font-weight: bold;
-    color: #1B5E20;
-    margin: 20px 0;
+    font-size: 34px;
+    font-weight: 900;
+    margin: 40px 0 20px;
+    color: #BF360C;
+    text-shadow: 0 3px 12px rgba(0,0,0,0.1);
   }
   canvas {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  }
+  @media (max-width: 768px) {
+    .container { padding: 25px; }
+    h1 { font-size: 1.9em; }
+    #result { font-size: 26px; }
   }
 </style>
-<!-- 引入 Chart.js 繪製折線圖 -->
+
+<!-- Chart.js + 漸層插件 -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-gradient"></script>
 </head>
 
 <body>
 <div class="container">
-  <h1>資產預測計算器</h1>
-  
+  <h1>資產複利增長預測計算器</h1>
+
   <div class="input-group">
     <div class="form-item">
       <label>當前資產（元）</label>
@@ -86,95 +114,142 @@
     </div>
     <div class="form-item">
       <label>預期年回報率（%）</label>
-      <input type="number" id="rate" value="7" step="0.1" min="0">
+      <input type="number" id="rate" value="8" step="0.1" min="-20" max="50">
     </div>
   </div>
 
   <div class="input-group">
     <div class="form-item">
       <label>預測時限（年）</label>
-      <input type="number" id="years" value="20" min="1" max="50">
+      <input type="number" id="years" value="25" min="1" max="50">
     </div>
     <div class="form-item">
-      <label>每月固定投入金額（元）</label>
-      <input type="number" id="monthly" value="10000" min="0">
+      <label>每月定投金額（元）</label>
+      <input type="number" id="monthly" value="15000" min="0">
     </div>
   </div>
 
-  <button onclick="calculate()">開始計算</button>
+  <button onclick="calculate()">立即預測未來財富</button>
 
-  <div id="result"></div>
+  <div id="result">請填寫上方資料後點擊按鈕即可計算</div>
 
-  <canvas id="chart" height="120"></canvas>
+  <canvas id="chart"></canvas>
 </div>
 
 <script>
-let myChart;
+let myChart = null;
+
+// 數字千分位 + NT$
+function formatMoney(num) {
+  return 'NT$' + Math.round(num).toLocaleString('zh-TW');
+}
+
+// 數字跳動動畫
+function animateValue(start, end, duration = 2000) {
+  const obj = document.getElementById('animatedNumber');
+  let startTimestamp = null;
+  const step = (timestamp) => {
+    if (!startTimestamp) startTimestamp = timestamp;
+    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    const current = Math.floor(progress * (end - start) + start);
+    obj.innerText = formatMoney(current);
+    if (progress < 1) window.requestAnimationFrame(step);
+  };
+  window.requestAnimationFrame(step);
+}
 
 function calculate() {
-  // 取得輸入值
   const initial = parseFloat(document.getElementById('initial').value) || 0;
-  const annualRate = parseFloat(document.getElementById('rate').value) / 100;
-  const years = parseInt(document.getElementById('years').value);
+  const annualRate = parseFloat(document.getElementById('rate').value) / 100 || 0;
+  const years = parseInt(document.getElementById('years').value) || 10;
   const monthlyAdd = parseFloat(document.getElementById('monthly').value) || 0;
 
   const months = years * 12;
   const monthlyRate = annualRate / 12;
 
-  // 計算每個月結束時的資產
   let balance = initial;
-  const data = [{x: 0, y: Math.round(initial)}];
+  const yearlyData = [{ x: 0, y: Math.round(initial) }];
 
   for (let m = 1; m <= months; m++) {
     balance = balance * (1 + monthlyRate) + monthlyAdd;
-    // 每年記錄一次（第12、24、36...個月）
     if (m % 12 === 0) {
-      data.push({x: m/12, y: Math.round(balance)});
+      yearlyData.push({ x: m / 12, y: Math.round(balance) });
     }
   }
-
   const finalAmount = Math.round(balance);
 
-  // 顯示最終金額
+  // 更新結果文字 + 動畫
   document.getElementById('result').innerHTML = 
-    ` ${years} 年後，預估資產將達到：<span style="color:#D32F2F;">${finalAmount.toLocaleString()} 元</span>`;
+    `${years} 年後，預估資產將達到：<br><span id="animatedNumber" style="font-size:1.1em; color:#E64A19;">${formatMoney(initial)}</span>`;
+  setTimeout(() => animateValue(initial, finalAmount, 2200), 200);
 
-  // 繪製圖表
-  const ctx = document.getElementById('chart').getContext('2d');
-  
+  // 銷毀舊圖表
   if (myChart) myChart.destroy();
+
+  const ctx = document.getElementById('chart').getContext('2d');
+
+  // 漂亮漸層
+  const gradient = ctx.createLinearGradient(0, 0, 0, 450);
+  gradient.addColorStop(0, 'rgba(255, 109, 0, 0.6)');
+  gradient.addColorStop(0.5, 'rgba(255, 193, 7, 0.35)');
+  gradient.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
 
   myChart = new Chart(ctx, {
     type: 'line',
     data: {
       datasets: [{
         label: '資產成長曲線',
-        data: data,
-        borderColor: '#FF5722',
-        backgroundColor: 'rgba(255, 87, 34, 0.2)',
+        data: yearlyData,
+        borderColor: '#FF6D00',
+        backgroundColor: gradient,
+        borderWidth: 5,
+        pointRadius: 7,
+        pointHoverRadius: 12,
+        pointBackgroundColor: '#FF6D00',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 3,
         fill: true,
-        tension: 0.5,
-        pointRadius: 4
+        tension: 0.42,
       }]
     },
     options: {
       responsive: true,
+      animation: { duration: 2200, easing: 'easeOutQuart' },
       plugins: {
-        title: { display: true, text: '資產複利增長預測圖', font: {size: 18} },
-        legend: { position: 'top'}
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          cornerRadius: 12,
+          titleFont: { size: 15 },
+          bodyFont: { size: 19, weight: 'bold' },
+          displayColors: false,
+          callbacks: {
+            title: ctx => `第 ${ctx[0].parsed.x} 年`,
+            label: ctx => '資產總額：' + formatMoney(ctx.parsed.y)
+          }
+        }
       },
       scales: {
-        x: { title: { display: true, text: '年數（年）' } },
-        y: { 
-          title: { display: true, text: '資產金額（元）' },
-          ticks: { callback: value => value.toLocaleString() }
+        x: {
+          type: 'linear',
+          title: { display: true, text: '年份（年）', font: { size: 16 } },
+          grid: { display: false },
+          ticks: { stepSize: 5, font: { size: 14 } }
+        },
+        y: {
+          title: { display: true, text: '資產金額（元）', font: { size: 16 } },
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: {
+            callback: value => 'NT$' + value.toLocaleString('zh-TW'),
+            font: { size: 13 }
+          }
         }
       }
     }
   });
 }
 
-// 頁面載入時先計算一次
+// 頁面載入時自動計算一次
 window.onload = calculate;
 </script>
 </body>
