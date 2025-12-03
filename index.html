@@ -16,7 +16,16 @@
   select,.mode-btn{padding:11px 20px;border:none;border-radius:50px;background:var(--input);color:var(--text);font-weight:600;min-width:120px;}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:18px;margin:35px 12px;}
   label{font-weight:700;color:var(--accent);margin-bottom:8px;display:block;}
-  input{width:100%;height:56px;padding:0 18px;font-size:1.1rem;font-weight:600;border:none;border-radius:18px;background:var(--input);box-shadow:0 8px 25px rgba(0,0,0,.1);}
+  input{
+    width:100%;height:56px;padding:0 18px;font-size:1.1rem;font-weight:600;
+    border:none;border-radius:18px;background:var(--input);box-shadow:0 8px 25px rgba(0,0,0,.1);
+    /* iPhone 關鍵：完全禁用原生鍵盤 + 游標 */
+    -webkit-user-modify:read-write-plaintext-only;
+    -webkit-text-fill-color:var(--text);
+    caret-color:transparent;
+    outline:none;
+  }
+  input.active{caret-color:var(--text);}
   .calc-btn{display:block;margin:45px auto 40px;padding:18px 60px;font-size:1.55rem;font-weight:900;color:#fff;background:linear-gradient(45deg,var(--accent),var(--accent-l));border:none;border-radius:50px;box-shadow:0 15px 40px rgba(255,109,0,.5);cursor:pointer;position:relative;overflow:hidden;transition:transform .2s;}
   .calc-btn:active,#reverseCalc:active{transform:scale(0.94);}
   .calc-btn::after,#reverseCalc::after{content:'';position:absolute;border-radius:50%;background:rgba(255,255,255,.5);width:0;height:0;left:var(--ripple-x,50%);top:var(--ripple-y,50%);transform:translate(-50%,-50%);pointer-events:none;}
@@ -61,7 +70,7 @@
 
   <div class="grid">
     <div><label>當前資產</label><input type="number" id="initial" value="500000"></div>
-    <div><label>預期年回報率</label><input type="number" id="rate" step="0.1" value="8"></div>
+    <div><label>預期年回報率 (%)</label><input type="number" id="rate" step="0.1" value="8"></div>
     <div><label>每期定投金額</label><input type="number" id="periodicAdd" value="10000"></div>
     <div><label>預測時間（正向）</label><input type="number" id="timeValue" min="1" value="20"></div>
     <div><label>目標資產（反向）</label><input type="number" id="targetAmount" value="10000000" placeholder="例如 1000萬"></div>
@@ -89,7 +98,7 @@
 <!-- 數字鍵盤 -->
 <div id="numPad">
   <div class="pad-grid">
-    <button class="pad-btn">1</button><button class="pad-btn">2</button><button class="pad-btn">3</button><button class="pad-btn del">⌫</button>
+    <button class="pad-btn">1</button><button class="pad-btn">2</button><button class="pad-btn">3</button><button class="pad-btn del">backspace</button>
     <button class="pad-btn">4</button><button class="pad-btn">5</button><button class="pad-btn">6</button><button class="pad-btn">000</button>
     <button class="pad-btn">7</button><button class="pad-btn">8</button><button class="pad-btn">9</button><button class="pad-btn done">完成</button>
     <button class="pad-btn">.</button><button class="pad-btn zero">0</button><button class="pad-btn">00</button><button class="pad-btn" style="visibility:hidden"></button>
@@ -97,143 +106,115 @@
 </div>
 
 <script>
-// ==================== 效能優化核心 ====================
 const $ = id => document.getElementById(id);
 const C = {HKD:{s:'HK$',r:1}, USD:{s:'US$',r:7.8}};
-let fmtCache = new Map(); // 快取數字格式化
+let fmtCache = new Map();
 
 function fmt(n){
-  const key = Math.round(n) + $('currency').value;
+  const key = Math.round(n)+$('currency').value;
   if(fmtCache.has(key)) return fmtCache.get(key);
   const cur = $('currency').value;
-  const val = cur==='USD' ? Math.round(n/7.8) : Math.round(n);
+  const val = cur==='USD'?Math.round(n/7.8):Math.round(n);
   const result = C[cur].s + val.toLocaleString('en-HK');
-  fmtCache.set(key, result);
-  if(fmtCache.size > 1000) fmtCache.clear(); // 防止記憶體洩漏
+  fmtCache.set(key,result);
+  if(fmtCache.size>1000) fmtCache.clear();
   return result;
 }
 
-const unitInfo = {
-  year:  { text:'年',   perYear:1,   rateDiv:1   },
-  month: { text:'個月', perYear:12,  rateDiv:12  },
-  week:  { text:'週',   perYear:52,  rateDiv:52  }
-};
+const unitInfo = {year:{text:'年',perYear:1,rateDiv:1},month:{text:'個月',perYear:12,rateDiv:12},week:{text:'週',perYear:52,rateDiv:52}};
 
-function save(){
-  localStorage.setItem('w', JSON.stringify({
-    initial:$('initial').value, rate:$('rate').value, timeValue:$('timeValue').value,
-    periodicAdd:$('periodicAdd').value, targetAmount:$('targetAmount').value,
-    currency:$('currency').value, timeUnit:$('timeUnit').value,
-    dark:document.body.classList.contains('dark')
-  }));
-}
+function save(){localStorage.setItem('w',JSON.stringify({
+  initial:$('initial').value,rate:$('rate').value,timeValue:$('timeValue').value,
+  periodicAdd:$('periodicAdd').value,targetAmount:$('targetAmount').value,
+  currency:$('currency').value,timeUnit:$('timeUnit').value,
+  dark:document.body.classList.contains('dark')
+}));}
+
 function load(){
-  try{
-    const d = JSON.parse(localStorage.getItem('w')||'null');
+  try{const d=JSON.parse(localStorage.getItem('w')||'null');
     if(d){
-      $('initial').value = d.initial??500000;
-      $('rate').value = d.rate??8;
-      $('timeValue').value = d.timeValue??20;
-      $('periodicAdd').value = d.periodicAdd??10000;
-      $('targetAmount').value = d.targetAmount??10000000;
-      $('currency').value = d.currency??'HKD';
-      $('timeUnit').value = d.timeUnit??'year';
+      $('initial').value=d.initial??500000;
+      $('rate').value=d.rate??8;
+      $('timeValue').value=d.timeValue??20;
+      $('periodicAdd').value=d.periodicAdd??10000;
+      $('targetAmount').value=d.targetAmount??10000000;
+      $('currency').value=d.currency??'HKD';
+      $('timeUnit').value=d.timeUnit??'year';
       if(d.dark) document.body.classList.add('dark');
     }
   }catch(e){}
 }
 
-// ============= 正向計算（極致優化）=============
-let lastCalcKey = '';
+// 正向計算（極致優化）
+let lastCalcKey='';
 function calc(){
-  const key = [ $('initial').value, $('rate').value, $('timeValue').value, 
-                $('periodicAdd').value, $('timeUnit').value, $('currency').value ].join('|');
-  if(key === lastCalcKey) return; // 完全相同則跳過
-  lastCalcKey = key;
-  fmtCache.clear();
-  save();
+  const key=[$('initial').value,$('rate').value,$('timeValue').value,$('periodicAdd').value,$('timeUnit').value,$('currency').value].join('|');
+  if(key===lastCalcKey) return;
+  lastCalcKey=key; fmtCache.clear(); save();
 
-  const initial = Math.max(0, +$('initial').value||0);
-  const annualRate = (+$('rate').value||0)/100;
-  const periods = Math.max(1, +$('timeValue').value||1);
-  const add = Math.max(0, +$('periodicAdd').value||0);
-  const unit = unitInfo[$('timeUnit').value];
+  const initial=Math.max(0,+($('initial').value)||0);
+  const annualRate=(+($('rate').value)||0)/100;
+  const periods=Math.max(1,+($('timeValue').value)||1);
+  const add=Math.max(0,+($('periodicAdd').value)||0);
+  const unit=unitInfo[$('timeUnit').value];
+  const ratePerPeriod=annualRate/unit.rateDiv;
 
-  const ratePerPeriod = annualRate / unit.rateDiv;
-  let balance = initial;
-  let totalInvested = initial;
+  let balance=initial,totalInvested=initial;
+  const fragment=document.createDocumentFragment();
+  const startRow=document.createElement('tr');
+  startRow.innerHTML=`<td>—</td><td>起始</td><td>${fmt(initial)}</td><td>—</td><td>—</td><td>${fmt(initial)}</td>`;
+  fragment.appendChild(startRow);
 
-  const rows = [{period:0, time:'起始', start:initial, invest:0, profit:0, end:initial}];
-  const fragment = document.createDocumentFragment();
-
-  for(let i=1; i<=periods; i++){
-    const profit = balance * ratePerPeriod;
-    balance = balance + profit + add;
-    totalInvested += add;
-
-    const timeLabel = unit.perYear===1 ? `${i} 年末` : 
-                     unit.perYear===12 ? `第 ${i} 個月` : `第 ${i} 週`;
-
-    const tr = document.createElement('tr');
-    if(i===periods) tr.className = 'highlight';
-    tr.innerHTML = `<td>${i}</td><td>${timeLabel}</td><td>${fmt(balance-profit-add)}</td><td>${fmt(add)}</td><td>${fmt(profit)}</td><td>${fmt(balance)}</td>`;
+  for(let i=1;i<=periods;i++){
+    const profit=balance*ratePerPeriod;
+    balance+=profit+add;
+    totalInvested+=add;
+    const timeLabel=unit.perYear===1?`${i} 年末`:unit.perYear===12?`第 ${i} 個月`:`第 ${i} 週`;
+    const tr=document.createElement('tr');
+    if(i===periods) tr.className='highlight';
+    tr.innerHTML=`<td>${i}</td><td>${timeLabel}</td><td>${fmt(balance-profit-add)}</td><td>${fmt(add)}</td><td>${fmt(profit)}</td><td>${fmt(balance)}</td>`;
     fragment.appendChild(tr);
   }
 
-  const final = Math.round(balance);
-  const totalProfit = final - totalInvested;
-
-  $('result').innerHTML = `${periods} ${unit.text} 後，資產預計：<br><span id="finalNum">${fmt(final)}</span>`;
-
-  const tbody = $('tbody');
-  tbody.innerHTML = '<tr><td>—</td><td>起始</td><td>'+fmt(initial)+'</td><td>—</td><td>—</td><td>'+fmt(initial)+'</td></tr>';
-  tbody.appendChild(fragment);
-
-  tbody.innerHTML += `
+  const final=Math.round(balance);
+  const totalProfit=final-totalInvested;
+  $('result').innerHTML=`${periods} ${unit.text} 後，資產預計：<br><span id="finalNum">${fmt(final)}</span>`;
+  $('tbody').innerHTML=''; $('tbody').appendChild(fragment);
+  $('tbody').innerHTML+=`
     <tr class="summary-row"><td colspan="2">總投入本金</td><td colspan="4">${fmt(totalInvested)}</td></tr>
-    <tr class="summary-row"><td colspan="2">總收益（複利）</td><td colspan="4">${fmt(totalProfit)} ➤ 回報率 ${((totalProfit/totalInvested)*100).toFixed(2)}%</td></tr>
-  `;
-
-  $('tableContainer').style.display = 'block';
+    <tr class="summary-row"><td colspan="2">總收益（複利）</td><td colspan="4">${fmt(totalProfit)} ➤ 回報率 ${((totalProfit/totalInvested)*100).toFixed(2)}%</td></tr>`;
+  $('tableContainer').style.display='block';
 }
 
-// ============= 反向計算（數學公式取代迴圈）=============
+// 反向計算（數學公式解，瞬間完成）
 function reverseCalc(){
   save(); fmtCache.clear();
-  const initial = Math.max(0, +$('initial').value||0);
-  let r = (+$('rate').value||0)/100;
-  if(r<=0) r=0.0001;
-  const add = Math.max(0, +$('periodicAdd').value||0);
-  let target = +$('targetAmount').value;
-  if(!target || target<=initial){ $('result').innerHTML='目標需大於目前資產'; return; }
+  const initial=Math.max(0,+($('initial').value)||0);
+  let r=(+($('rate').value)||0)/100; if(r<=0) r=0.0001;
+  const add=Math.max(0,+($('periodicAdd').value)||0);
+  let target=+($('targetAmount').value);
+  if(!target||target<=initial){$('result').innerHTML='目標需大於目前資產';return;}
 
-  const unit = unitInfo[$('timeUnit').value];
-  const monthlyRate = r / unit.rateDiv;
+  const unit=unitInfo[$('timeUnit').value];
+  const rate= r/unit.rateDiv;
 
-  // 複利公式解 n（極快）
   let n;
   if(add===0){
-    n = Math.log(target/initial) / Math.log(1+monthlyRate);
+    n=Math.log(target/initial)/Math.log(1+rate);
   }else{
-    n = Math.log( (target*monthlyRate - add*(1+monthlyRate) + add) / (initial*monthlyRate + add) ) / Math.log(1+monthlyRate);
+    n=Math.log((target*rate-add*(1+rate)+add)/(initial*rate+add))/Math.log(1+rate);
   }
-  n = Math.max(1, Math.ceil(n));
+  n=Math.max(1,Math.ceil(n));
 
-  let balance = initial;
-  let totalInvested = initial;
-  for(let i=0;i<n;i++){
-    balance = balance*(1+monthlyRate) + add;
-    totalInvested += add;
-  }
+  let balance=initial,totalInvested=initial;
+  for(let i=0;i<n;i++){balance=balance*(1+rate)+add;totalInvested+=add;}
+  const profit=Math.round(balance)-totalInvested;
+  const years=n/unit.perYear;
+  const timeStr=unit.perYear===1?`${n.toFixed(1)} 年`:
+                unit.perYear===12?`${n} 個月（約 ${years.toFixed(1)} 年）`:
+                                 `${n} 週（約 ${years.toFixed(1)} 年）`;
 
-  const years = n / unit.perYear;
-  const timeStr = unit.perYear===1 ? `${n.toFixed(1)} 年` :
-                 unit.perYear===12 ? `${n} 個月（約 ${years.toFixed(1)} 年）` :
-                                     `${n} 週（約 ${years.toFixed(1)} 年）`;
-
-  const profit = Math.round(balance) - totalInvested;
-
-  $('result').innerHTML = `
+  $('result').innerHTML=`
     <div style="font-size:1.8rem;line-height:1.7;">
       達成 <span style="color:var(--accent)">${fmt(target)}</span>目標<br>
       <b style="font-size:2.4rem;color:var(--accent-l)">約 ${timeStr}</b><br><br>
@@ -243,57 +224,57 @@ function reverseCalc(){
   $('tableContainer').style.display='none';
 }
 
-// ============= 事件綁定（防抖 + 快取）=============
-load();
-calc();
-
-const debounce = (fn, delay=150) => {
-  let t;
-  return () => { clearTimeout(t); t=setTimeout(fn,delay); };
-};
-
-const inputs = ['initial','rate','timeValue','periodicAdd','currency','timeUnit'];
-inputs.forEach(id => $(id).addEventListener('input', debounce(calc)));
-
-$('targetAmount').addEventListener('input', ()=>{ if($('targetAmount').value) $('result').innerHTML='點擊下方按鈕計算所需時間'; });
-$('normalCalc').onclick = calc;
-$('reverseCalc').onclick = reverseCalc;
-$('darkBtn').onclick = ()=>{ document.body.classList.toggle('dark'); save(); };
+// 初始化與事件
+load(); calc();
+const debounce=(fn,delay=150)=>{let t;return()=>{clearTimeout(t);t=setTimeout(fn,delay);};};
+['initial','rate','timeValue','periodicAdd','currency','timeUnit'].forEach(id=>$(id).addEventListener('input',debounce(calc)));
+$('targetAmount').addEventListener('input',()=>{if($('targetAmount').value)$('result').innerHTML='點擊下方按鈕計算所需時間';});
+$('normalCalc').onclick=calc;
+$('reverseCalc').onclick=reverseCalc;
+$('darkBtn').onclick=()=>{document.body.classList.toggle('dark');save();};
 
 // 按鈕波紋
-const ripple = btn => btn.addEventListener('click', e=>{
-  const rect = btn.getBoundingClientRect();
-  btn.style.setProperty('--ripple-x', (e.clientX-rect.left)+'px');
-  btn.style.setProperty('--ripple-y', (e.clientY-rect.top)+'px');
+const ripple=btn=>btn.addEventListener('click',e=>{
+  const rect=btn.getBoundingClientRect();
+  btn.style.setProperty('--ripple-x',(e.clientX-rect.left)+'px');
+  btn.style.setProperty('--ripple-y',(e.clientY-rect.top)+'px');
   btn.classList.add('clicked');
   setTimeout(()=>btn.classList.remove('clicked'),600);
 });
-ripple($('normalCalc'));
-ripple($('reverseCalc'));
+ripple($('normalCalc')); ripple($('reverseCalc'));
 
-// ============= 數字鍵盤（極簡高效）=============
-let activeInput = null;
-const showPad = i=>{ activeInput=i; $('numPad').classList.add('show'); i.focus(); };
-const hidePad = ()=>{ $('numPad').classList.remove('show'); activeInput=null; };
+// === 數字鍵盤（iPhone 完全不彈原生鍵盤）===
+let activeInput=null;
+const showPad=input=>{
+  input.blur(); // 關鍵：強制失焦
+  activeInput=input;
+  input.classList.add('active');
+  $('numPad').classList.add('show');
+  // 選取全部文字
+  setTimeout(()=>{try{const range=document.createRange();const sel=window.getSelection();range.selectNodeContents(input);sel.removeAllRanges();sel.addRange(range);}catch(e){}},50);
+};
+const hidePad=()=>{
+  if(activeInput){activeInput.classList.remove('active');activeInput.blur();}
+  activeInput=null;$('numPad').classList.remove('show');
+};
 
 document.querySelectorAll('#initial,#rate,#periodicAdd,#timeValue,#targetAmount').forEach(inp=>{
-  inp.addEventListener('focus',()=> window.innerWidth<=768 && showPad(inp));
-  inp.addEventListener('click',()=> window.innerWidth<=768 && showPad(inp));
+  inp.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();showPad(inp);});
+  inp.addEventListener('focus',e=>{e.preventDefault();inp.blur();});
 });
 
 document.querySelectorAll('.pad-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
+  btn.addEventListener('click',()=>{
     if(!activeInput) return;
-    let v = activeInput.value;
-    const key = btn.textContent;
-    if(key==='⌫') v=v.slice(0,-1);
-    else if(btn.classList.contains('done')){ hidePad(); activeInput.blur(); return; }
-    else if(key==='000') v+= '000';
-    else if(key==='00') v+= '00';
-    else v+= key;
-
-    if(v && v!=='.' && v!=='0.') v = parseFloat(v)+'';
-    activeInput.value = v;
+    let v=activeInput.value||'';
+    const key=btn.textContent;
+    if(key==='backspace') v=v.slice(0,-1);
+    else if(btn.classList.contains('done')){hidePad();return;}
+    else if(key==='000') v+='000';
+    else if(key==='00') v+='00';
+    else v+=key;
+    if(v && v!=='.' && v!=='0.') v=parseFloat(v)+'';
+    activeInput.value=v;
     activeInput.dispatchEvent(new Event('input'));
   });
 });
