@@ -159,6 +159,38 @@
     input{height:52px;font-size:1rem;}
     .calc-btn{padding:16px 50px;font-size:1.45rem;}
   }
+
+  /* 只要加入這段即可（放在你原本的 <style> 裡面任意位置） */
+  .calc-btn, #reverseCalc {
+    position: relative;
+    overflow: hidden;
+    transition: transform .2s;
+  }
+  .calc-btn:active, #reverseCalc:active {
+    transform: scale(0.94);
+  }
+  .calc-btn::after, #reverseCalc::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,.5);
+    width: 0; height: 0;
+    left: var(--ripple-x, 50%);
+    top: var(--ripple-y, 50%);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    opacity: 0;
+  }
+  .calc-btn.clicked::after, #reverseCalc.clicked::after {
+    animation: ripple 0.6s ease-out;
+    width: 300px;
+    height: 300px;
+    opacity: 0;
+  }
+  @keyframes ripple {
+    to { width: 300px; height: 300px; opacity: 0; }
+  }
+  
 </style>
 </head>
 <body>
@@ -370,6 +402,21 @@ $('reverseCalc').onclick = reverseCalc;
 document.querySelectorAll('#initial,#rate,#timeValue,#periodicAdd,#currency,#timeUnit').forEach(el=>el.addEventListener('input',calc));
 $('targetAmount').addEventListener('input',()=>{if($('targetAmount').value)$('result').innerHTML='點擊下方按鈕計算所需時間';});
 $('#darkBtn').onclick=()=>{document.body.classList.toggle('dark');save();};
+
+const addClickEffect = btn => {
+  btn.addEventListener('click', function(e) {
+    const rect = this.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    this.style.setProperty('--ripple-x', x + 'px');
+    this.style.setProperty('--ripple-y', y + 'px');
+    this.classList.add('clicked');
+    setTimeout(() => this.classList.remove('clicked'), 600);
+  });
+};
+
+addClickEffect(document.getElementById('normalCalc'));
+addClickEffect(document.getElementById('reverseCalc'));
 </script>
 </body>
 </html>
