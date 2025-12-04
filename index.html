@@ -186,42 +186,74 @@ function calc(){
   $('tableContainer').style.display='block';
 }
 
-// 反向計算（數學公式解，瞬間完成）
-function reverseCalc(){
+// ── 全新精準反向計算：計算到「正好達到目標」──
+function reverseCalc() {
   save(); fmtCache.clear();
-  const initial=Math.max(0,+($('initial').value)||0);
-  let r=(+($('rate').value)||0)/100; if(r<=0) r=0.0001;
-  const add=Math.max(0,+($('periodicAdd').value)||0);
-  let target=+($('targetAmount').value);
-  if(!target||target<=initial){$('result').innerHTML='目標需大於目前資產';return;}
 
-  const unit=unitInfo[$('timeUnit').value];
-  const rate= r/unit.rateDiv;
-
-  let n;
-  if(add===0){
-    n=Math.log(target/initial)/Math.log(1+rate);
-  }else{
-    n=Math.log((target*rate-add*(1+rate)+add)/(initial*rate+add))/Math.log(1+rate);
+  const initial = Math.max(0, +($('initial').value) || 0);
+  let annualRate = (+($('rate').value) || 0) / 100;
+  if (annualRate <= 0) annualRate = 0.0001;
+  const fullAdd = Math.max(0, +($('periodicAdd').value) || 0);
+  let target = +($('targetAmount').value);
+  if (!target || target <= initial) {
+    $('result').innerHTML = '目標需大於目前資產';
+    return;
   }
-  n=Math.max(1,Math.ceil(n));
 
-  let balance=initial,totalInvested=initial;
-  for(let i=0;i<n;i++){balance=balance*(1+rate)+add;totalInvested+=add;}
-  const profit=Math.round(balance)-totalInvested;
-  const years=n/unit.perYear;
-  const timeStr=unit.perYear===1?`${n.toFixed(1)} 年`:
-                unit.perYear===12?`${n} 個月（約 ${years.toFixed(1)} 年）`:
-                                 `${n} 週（約 ${years.toFixed(1)} 年）`;
+  const unit = unitInfo[$('timeUnit').value];
+  const rate = annualRate / unit.rateDiv;          // 每期利率
+  const perYear = unit.perYear;
 
-  $('result').innerHTML=`
-    <div style="font-size:1.8rem;line-height:1.7;">
-      達成 <span style="color:var(--accent)">${fmt(target)}</span>目標<br>
-      <b style="font-size:2.4rem;color:var(--accent-l)">約 ${timeStr}</b><br><br>
+  let balance = initial;
+  let totalInvested = initial;
+  let period = 0;
+
+  // Step 1: 用完整定投金額盡可能逼近目標
+  while (balance < target) {
+    const nextBalance = balance * (1 + rate) + fullAdd;
+    if (nextBalance >= target) break;  // 下一次就會超，停在這一期前
+    balance = nextBalance;
+    totalInvested += fullAdd;
+    period++;
+  }
+
+  // Step 2: 計算最後一期「實際只需投入多少」
+  const remaining = target - balance * (1 + rate);  // 還缺多少（已含最後一期收益）
+  const lastAdd = remaining > 0 ? Math.max(0, Math.round(remaining)) : 0;
+
+  // 最後一期真的投入
+  if (lastAdd > 0) {
+    balance = balance * (1 + rate) + lastAdd;
+    totalInvested += lastAdd;
+    period++;
+  } else {
+    // 剛好在本期收益就達標（極少數情況）
+    balance = balance * (1 + rate);
+  }
+
+  const profit = Math.round(balance - totalInvested);
+  const years = period / perYear;
+
+  const timeStr = perYear === 1 ? `${years.toFixed(1)} 年` :
+    perYear === 12 ? `${period} 個月（約 ${years.toFixed(1)} 年）` :
+      `${period} 週（約 ${years.toFixed(1)} 年）`;
+
+  const lastAddText = (lastAdd > 0 && lastAdd < fullAdd)
+    ? `<br>→ 第 ${period} 期只需投入 <b style="font-size:1.5em;color:var(--accent)">${fmt(lastAdd)}</b>（而非 ${fmt(fullAdd)}）`
+    : '';
+
+  $('result').innerHTML = `
+    <div style="font-size:1.8rem;line-height:1.8;">
+      達成 <span style="color:var(--accent)">${fmt(target)}</span> 目標<br>
+      <b style="font-size:2.4rem;color:var(--accent-l)">約 ${timeStr}</b>
+      ${lastAddText}
+      <br><br>
       總投入本金：${fmt(totalInvested)}<br>
-      總收益：${fmt(profit)} <span style="color:var(--accent)">(回報 ${(profit/totalInvested*100).toFixed(1)}%)</span>
+      總收益：${fmt(profit)} 
+      <span style="color:var(--accent)">(回報 ${(profit / totalInvested * 100).toFixed(1)}%)</span>
     </div>`;
-  $('tableContainer').style.display='none';
+
+  $('tableContainer').style.display = 'none';
 }
 
 // 初始化與事件
